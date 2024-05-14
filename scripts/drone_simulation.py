@@ -29,7 +29,7 @@ psi_v = 0.0  # vectoring angle (radians)
 setpoint_z = 5.0  # desired altitude (m)
 
 # PID Controller for altitude
-pid_z = PID(kp=2.0, ki=0.1, kd=0.5)
+pid_z = PID(kp=8.0, ki=2.0, kd=4.0)
 
 # Define the equations of motion
 def equations(state, t, u):
