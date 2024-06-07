@@ -1,3 +1,4 @@
+#include "DataProcessor.h"
 #include "IMUController.h"
 #include "SDController.h"
 #include "ServoController.h"
@@ -8,6 +9,7 @@
 IMUController imuController;
 ServoController servoController;
 SDController sdController(SD_CS_PIN);
+DataProcessor dataProcessor;
 
 // put function declarations here:
 
