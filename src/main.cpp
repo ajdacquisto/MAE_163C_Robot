@@ -13,6 +13,7 @@ SDController sdController(SD_CS_PIN);
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
   imuController.init();
   servoController.init();
 
@@ -22,9 +23,9 @@ void setup() {
     Serial.println("SD card initialization failed.");
     return;
   }
-  
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  Serial.println(imuController.read());
 }
