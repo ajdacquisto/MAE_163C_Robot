@@ -19,8 +19,8 @@ private:
   // Add your member variables here
   const int MPU_ADDR = 0x68; // I2C address of the MPU-6050. If AD0 pin is set
                              // to HIGH, the I2C address will be 0x69.
-  int16_t temperature;            // variables for temperature data
-  char tmp_str[7];                // temporary variable used in convert function
+  int16_t temperature;       // variables for temperature data
+  char tmp_str[7];           // temporary variable used in convert function
 
   // Private helper functions
   String convert_int16_to_str(int16_t i);
