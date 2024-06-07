@@ -2,7 +2,7 @@
 #define SERVOCONTROLLER_H
 
 #include "config.h"
-#include <src/Servo.h> // Update the include path to use angle brackets instead of quotes
+#include <Servo.h> // Update the include path to use angle brackets instead of quotes
 
 class ServoController {
 public:

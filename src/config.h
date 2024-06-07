@@ -7,4 +7,6 @@ const int SERVO2_PIN = 10;
 const int SERVO3_PIN = 11;
 const int SERVO4_PIN = 12;
 
+const int SD_CS_PIN = 4;
+
 #endif // CONFIG_H
