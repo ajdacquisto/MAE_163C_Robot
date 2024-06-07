@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief This file contains the main code for the MAE_163C_Robot project.
+ */
+
 #include "DataProcessor.h"
 #include "IMUController.h"
 #include "SDController.h"
@@ -13,6 +18,12 @@ DataProcessor dataProcessor;
 
 // put function declarations here:
 
+/**
+ * @brief The setup function.
+ * 
+ * This function is called once when the Arduino board is powered on or reset.
+ * It initializes the serial communication, IMU, servo controller, and SD card.
+ */
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -27,6 +38,12 @@ void setup() {
   }
 }
 
+/**
+ * @brief The loop function.
+ * 
+ * This function is called repeatedly after the setup function.
+ * It reads IMU data, processes accelerometer and gyro data, and performs additional operations using the processed data.
+ */
 void loop() {
   String imuData =
       imu.read(); // Assuming `imu.read()` updates accelerometer and gyro data

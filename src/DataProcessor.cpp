@@ -1,5 +1,10 @@
 #include "DataProcessor.h"
 
+/**
+ * @brief Constructs a new instance of the DataProcessor class.
+ *
+ * This constructor initializes all member variables to zero.
+ */
 DataProcessor::DataProcessor()
     : last_time_(0), surge_position_(0), surge_velocity_(0),
       surge_acceleration_(0), sway_position_(0), sway_velocity_(0),
@@ -9,8 +14,21 @@ DataProcessor::DataProcessor()
       pitch_integral_(0), roll_angle_(0), roll_rate_(0), roll_acceleration_(0),
       roll_integral_(0) {}
 
+/**
+ * @brief Destructor for the DataProcessor class.
+ * 
+ * This destructor is responsible for cleaning up any resources
+ * allocated by the DataProcessor class.
+ */
 DataProcessor::~DataProcessor() {}
 
+/**
+ * Process accelerometer data.
+ * 
+ * @param ax The x-axis accelerometer reading.
+ * @param ay The y-axis accelerometer reading.
+ * @param az The z-axis accelerometer reading.
+ */
 void DataProcessor::processAccelerometer(int16_t ax, int16_t ay, int16_t az) {
   unsigned long current_time = millis();
   float dt =
@@ -38,6 +56,13 @@ void DataProcessor::processAccelerometer(int16_t ax, int16_t ay, int16_t az) {
   last_time_ = current_time;
 }
 
+/**
+ * Process gyroscope data.
+ * 
+ * @param gx The x-axis gyroscope reading.
+ * @param gy The y-axis gyroscope reading.
+ * @param gz The z-axis gyroscope reading.
+ */
 void DataProcessor::processGyro(int16_t gx, int16_t gy, int16_t gz) {
   unsigned long current_time = millis();
   float dt =

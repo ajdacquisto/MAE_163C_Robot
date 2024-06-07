@@ -4,15 +4,34 @@
 // Include any necessary headers
 #include <Arduino.h>
 
-// Define your class for data processing
-
+/**
+ * @brief The DataProcessor class is responsible for processing accelerometer and gyro data.
+ * 
+ * It calculates the position, velocity, acceleration, angle, rate, and integral for each axis.
+ * The class also defines necessary constants and time step for integration.
+ */
 class DataProcessor {
 public:
   DataProcessor();  // Constructor
   ~DataProcessor(); // Destructor
 
   // Declare public member functions
+  /**
+   * @brief Processes accelerometer data and updates surge, sway, and heave variables.
+   * 
+   * @param ax The accelerometer reading along the X-axis.
+   * @param ay The accelerometer reading along the Y-axis.
+   * @param az The accelerometer reading along the Z-axis.
+   */
   void processAccelerometer(int16_t ax, int16_t ay, int16_t az);
+
+  /**
+   * @brief Processes gyroscope data and updates yaw, pitch, and roll variables.
+   * 
+   * @param gx The gyroscope reading along the X-axis.
+   * @param gy The gyroscope reading along the Y-axis.
+   * @param gz The gyroscope reading along the Z-axis.
+   */
   void processGyro(int16_t gx, int16_t gy, int16_t gz);
 
 private:
