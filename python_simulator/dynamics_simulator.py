@@ -162,11 +162,11 @@ class DroneSimulation:
         gyro = np.array(gyro)
 
         # PD controller gains (further reduced for better performance)
-        Kp_pos = np.array([0.1, 0.1, 0.5])
-        Kd_pos = np.array([0.05, 0.05, 0.2])
+        Kp_pos = np.array([0.05, 0.05, 0.2])
+        Kd_pos = np.array([0.025, 0.025, 0.1])
 
-        Kp_ang = np.array([1.0, 1.0, 1.0])
-        Kd_ang = np.array([0.5, 0.5, 0.5])
+        Kp_ang = np.array([0.5, 0.5, 0.5])
+        Kd_ang = np.array([0.25, 0.25, 0.25])
 
         # Compute the desired force using PD control
         desired_force = Kp_pos * pos_err - Kd_pos * vel + gravity
@@ -178,8 +178,8 @@ class DroneSimulation:
         desired_torque = Kp_ang * ang_err - Kd_ang * ang_vel_err
 
         # Soft limit the desired force and torque to avoid instability
-        force_limit = 2.0
-        torque_limit = 2.0
+        force_limit = 1.0
+        torque_limit = 1.0
         desired_force = np.clip(desired_force, -force_limit, force_limit)
         desired_torque = np.clip(desired_torque, -torque_limit, torque_limit)
 
