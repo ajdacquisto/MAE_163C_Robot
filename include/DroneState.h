@@ -1,18 +1,17 @@
 #ifndef DRONESTATE_H
 #define DRONESTATE_H
 
-#include <BasicLinearAlgebra.h>
-
-using namespace BLA;
+#include "Matrix.h"
 
 struct DroneState {
-    BLA::Matrix<3> position;          // X, Y, Z
-    BLA::Matrix<3> velocity;          // dX, dY, dZ
-    BLA::Matrix<3> orientation;       // Roll (phi), Pitch (θ), Yaw (psi)
-    BLA::Matrix<3> angular_velocity;  // Roll rate (dPhi), Pitch rate (dTheta), Yaw rate (dPsi)
+  Matrix3x1 position;         // X, Y, Z
+  Matrix3x1 velocity;         // dX, dY, dZ
+  Matrix3x1 orientation;      // Roll (phi), Pitch (θ), Yaw (psi)
+  Matrix3x1 angular_velocity; // Roll rate (dPhi), Pitch rate (dTheta), Yaw rate
+                              // (dPsi)
 
-    DroneState(); // Constructor to initialize matrices
-    void printState() const; // Method to print the current state (for debugging)
+  DroneState();            // Constructor to initialize matrices
+  void printState() const; // Method to print the current state (for debugging)
 };
 
 #endif // DRONESTATE_H

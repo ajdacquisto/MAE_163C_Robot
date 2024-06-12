@@ -1,17 +1,15 @@
 #ifndef FRAMECONVERTER_H
 #define FRAMECONVERTER_H
 
-#include <BasicLinearAlgebra.h>
-
-using namespace BLA;
+#include "Matrix.h"
 
 class FrameConverter {
 public:
-  static Matrix<3, 3> computeRotationMatrix(const Matrix<3> &orientation);
-  static Matrix<3> toWorldFrame(const Matrix<3> &local_vector,
-                                const Matrix<3> &orientation);
-  static Matrix<3> toLocalFrame(const Matrix<3> &world_vector,
-                                const Matrix<3> &orientation);
+  static Matrix3x3 computeRotationMatrix(const Matrix3x1 &orientation);
+  static Matrix3x1 toWorldFrame(const Matrix3x1 &local_vector,
+                                const Matrix3x1 &orientation);
+  static Matrix3x1 toLocalFrame(const Matrix3x1 &world_vector,
+                                const Matrix3x1 &orientation);
 };
 
 #endif // FRAMECONVERTER_H

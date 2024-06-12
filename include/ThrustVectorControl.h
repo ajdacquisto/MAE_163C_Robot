@@ -1,17 +1,15 @@
 #ifndef THRUSTVECTORCONTROL_H
 #define THRUSTVECTORCONTROL_H
 
-#include "ServoController.h"
-#include <BasicLinearAlgebra.h>
-
-using namespace BLA;
+#include "Matrix.h"
+#include <Arduino.h> // For uint8_t
 
 class ThrustVectorControl {
 private:
-  ServoController frontServo;
-  ServoController rightServo;
-  ServoController rearServo;
-  ServoController leftServo;
+  uint8_t frontServoPin;
+  uint8_t rightServoPin;
+  uint8_t rearServoPin;
+  uint8_t leftServoPin;
 
   float frontRearArmLength; // Distance from the center of gravity to the
                             // front/rear servos
@@ -28,7 +26,7 @@ public:
                       float maxServoAngle, float maxThrust, float maxPropSpeed);
 
   void initialize();
-  void computeControlActions(const Matrix<3> &u_total);
+  void computeControlActions(const Matrix3x1 &u_total);
   void applyControlActions();
   float getCurrentPropSpeed() const;
 };

@@ -2,25 +2,26 @@
 #define KALMANFILTER_H
 
 #include "DroneState.h"
-#include <BasicLinearAlgebra.h>
-
-using namespace BLA;
+#include "Matrix.h"
 
 class KalmanFilter {
 private:
   DroneState state;
-  BLA::Matrix<12, 12> F, P, Q, B;
-  BLA::Matrix<6, 12> H;
-  BLA::Matrix<6, 6> R;
-  BLA::Matrix<12, 6> OKAY;
+  Matrix3x3 F;
+  Matrix3x3 P;
+  Matrix3x3 Q;
+  Matrix3x3 B;
+  Matrix3x3 H;
+  Matrix3x3 R;
+  Matrix3x3 OKAY;
 
 public:
   KalmanFilter();
   void initializeMatrices();
-  void predict(const BLA::Matrix<3> &linear_acceleration,
-               const BLA::Matrix<3> &angular_velocity);
-  void update(const BLA::Matrix<3> &linear_acceleration,
-              const BLA::Matrix<3> &angular_velocity);
+  void predict(const Matrix3x1 &linear_acceleration,
+               const Matrix3x1 &angular_velocity);
+  void update(const Matrix3x1 &linear_acceleration,
+              const Matrix3x1 &angular_velocity);
   DroneState getState() const;
 };
 

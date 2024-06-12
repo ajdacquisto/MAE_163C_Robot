@@ -1,22 +1,20 @@
 #ifndef PIDCONTROLLER_H
 #define PIDCONTROLLER_H
 
-#include <BasicLinearAlgebra.h>
-
-using namespace BLA;
+#include "Matrix.h"
 
 class PIDController {
 private:
-    Matrix<3, 3> K_p;
-    Matrix<3, 3> K_d;
-    Matrix<3> error;
-    Matrix<3> previous_error;
+  Matrix3x3 K_p;
+  Matrix3x3 K_d;
+  Matrix3x1 error;
+  Matrix3x1 previous_error;
 
 public:
-    PIDController(const Matrix<3, 3> &Kp, const Matrix<3, 3> &Kd);
-    void calculateError(const Matrix<3> &current, const Matrix<3> &desired);
-    Matrix<3> computeProportionalTerm() const;
-    Matrix<3> computeDerivativeTerm(float dt);
+  PIDController(const Matrix3x3 &Kp, const Matrix3x3 &Kd);
+  void calculateError(const Matrix3x1 &current, const Matrix3x1 &desired);
+  Matrix3x1 computeProportionalTerm();
+  Matrix3x1 computeDerivativeTerm(float dt);
 };
 
 #endif // PIDCONTROLLER_H

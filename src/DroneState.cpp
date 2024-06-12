@@ -3,7 +3,7 @@
 #include <avr/pgmspace.h> // For PROGMEM
 
 DroneState::DroneState()
-    : position(0), velocity(0), orientation(0), angular_velocity(0) {}
+    : position(), velocity(), orientation(), angular_velocity() {}
 
 void DroneState::printState() const {
   // Use PROGMEM to store constant format strings
@@ -16,19 +16,20 @@ void DroneState::printState() const {
 
   char buffer[128]; // Reduced buffer size
 
-  snprintf_P(buffer, sizeof(buffer), formatPosition, position(0), position(1),
-             position(2));
+  snprintf_P(buffer, sizeof(buffer), formatPosition, position.data[0],
+             position.data[1], position.data[2]);
   Serial.print(buffer);
 
-  snprintf_P(buffer, sizeof(buffer), formatVelocity, velocity(0), velocity(1),
-             velocity(2));
+  snprintf_P(buffer, sizeof(buffer), formatVelocity, velocity.data[0],
+             velocity.data[1], velocity.data[2]);
   Serial.print(buffer);
 
-  snprintf_P(buffer, sizeof(buffer), formatOrientation, orientation(0),
-             orientation(1), orientation(2));
+  snprintf_P(buffer, sizeof(buffer), formatOrientation, orientation.data[0],
+             orientation.data[1], orientation.data[2]);
   Serial.print(buffer);
 
-  snprintf_P(buffer, sizeof(buffer), formatAngularVelocity, angular_velocity(0),
-             angular_velocity(1), angular_velocity(2));
+  snprintf_P(buffer, sizeof(buffer), formatAngularVelocity,
+             angular_velocity.data[0], angular_velocity.data[1],
+             angular_velocity.data[2]);
   Serial.print(buffer);
 }
