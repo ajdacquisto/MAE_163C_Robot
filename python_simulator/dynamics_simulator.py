@@ -103,12 +103,52 @@ class DroneSimulation:
 
         return disturbed_state
 
-    def compute_control_action(self, pos_err, vel, gravity, gyro):
-        Kp = np.array([1.0, 1.0, 1.0])
-        Kd = np.array([0.5, 0.5, 0.5])
-        desired_force = Kp * pos_err - Kd * vel + gravity
-        desired_force[2] += 9.81
-        desired_torque = np.array([0.0, 0.0, 0.0])
+    def compute_control_action(self, pos_err, vel, gravity, gyro, angles):
+        """
+        Compute the control action based on the current error and state.
+
+        Args:
+        - pos_err: Position error (3D vector).
+        - vel: Velocity (3D vector).
+        - gravity: Gravity compensation (3D vector).
+        - gyro: Gyro effects (3D vector).
+        - angles: Current angles of the drone (phi, theta, psi).
+
+        Returns:
+        - desired_force: Desired force vector to achieve the control action.
+        - desired_torque: Desired torque vector to achieve the control action.
+        """
+        # Convert gyro to a numpy array
+        gyro = np.array(gyro)
+
+        # PD controller gains (adjusted for better performance)
+        Kp_pos = np.array([0.5, 0.5, 1.0])
+        Kd_pos = np.array([0.3, 0.3, 0.6])
+
+        Kp_ang = np.array([3.0, 3.0, 3.0])
+        Kd_ang = np.array([1.5, 1.5, 1.5])
+
+        # Compute the desired force using PD control
+        desired_force = Kp_pos * pos_err - Kd_pos * vel + gravity
+        desired_force[2] += 9.81  # Counteract gravity for hovering
+
+        # Compute the desired torque using PD control on angles
+        ang_err = -np.array(angles)  # Assuming desired angles are zero
+        ang_vel_err = -gyro
+        desired_torque = Kp_ang * ang_err - Kd_ang * ang_vel_err
+
+        # Limit the desired force and torque to avoid instability
+        desired_force = np.clip(desired_force, -5.0, 5.0)
+        desired_torque = np.clip(desired_torque, -5.0, 5.0)
+
+        # Debug information
+        print(f"Position error: {pos_err}")
+        print(f"Velocity: {vel}")
+        print(f"Gravity: {gravity}")
+        print(f"Gyro: {gyro}")
+        print(f"Angles: {angles}")
+        print(f"Desired force: {desired_force}")
+        print(f"Desired torque: {desired_torque}")
 
         return desired_force, desired_torque
 
@@ -153,24 +193,33 @@ class DroneSimulation:
         ]
 
     def simulate(self):
-        state = np.zeros(12)
-        state[2] = 0.5
+        """
+        Simulate the drone's behavior over time.
+        """
+        state = np.zeros(12)  # Initial state vector
+        state[2] = 0.5  # Initial z position to start the drone at 0.5 meters height
 
         for _ in range(self.num_steps):
-            pos_err = -np.array(state[:3])
-            vel_err = -np.array(state[3:6])
-            gravity = np.array([0, 0, 9.81])
+            pos_err = -np.array(state[:3])  # Assuming desired position is origin
+            vel_err = -np.array(state[3:6])  # Assuming desired velocity is zero
+            gravity = np.array([0, 0, 9.81])  # Gravity vector
 
+            # Add random angular disturbance
+            state[6] += random.uniform(-0.05, 0.05)  # Disturbance in phi
+            state[7] += random.uniform(-0.05, 0.05)  # Disturbance in theta
+            state[8] += random.uniform(-0.05, 0.05)  # Disturbance in psi
+
+            angles = [state[6], state[7], state[8]]
+            gyro = [state[9], state[10], state[11]]
+
+            # Compute control action
             desired_force, desired_torque = self.compute_control_action(
-                pos_err, vel_err, gravity, [0, 0, 0]
+                pos_err, vel_err, gravity, gyro, angles
             )
             servo_angles = self.convert_to_servo_angles(desired_force, desired_torque)
             thrust_vector = self.calculate_thrust_vector(servo_angles)
 
-            state[6] += random.uniform(-0.1, 0.1)
-            state[7] += random.uniform(-0.1, 0.1)
-            state[8] += random.uniform(-0.1, 0.1)
-
+            # Update state
             new_state = self.update_drone_state(
                 state, thrust_vector, desired_torque, self.dt
             )
@@ -179,6 +228,7 @@ class DroneSimulation:
             self.trajectory.append(state)
             self.phi_data.append(state[6])
             self.theta_data.append(state[7])
+            self.psi_data.append(state[8])
 
     def get_trajectory_data(self):
         x_data = [state[0] for state in self.trajectory]
