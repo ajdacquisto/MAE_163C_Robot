@@ -1,59 +1,29 @@
-/**
- * @file main.cpp
- * @brief This file contains the main code for the MAE_163C_Robot project.
- */
-
-#include "DataProcessor.h"
-#include "IMUController.h"
-#include "SDController.h"
-#include "ServoController.h"
-#include "config.h"
+#include "ControlSystem.h"
 #include <Arduino.h>
 
-// Control objects
-IMUController imu;
-ServoController servoController;
-SDController sdController(SD_CS_PIN);
-DataProcessor dataProcessor;
+// Define your pins and constants here
+constexpr int SD_CS_PIN = 10;
+constexpr int FRONT_SERVO_PIN = 9;
+constexpr int RIGHT_SERVO_PIN = 8;
+constexpr int REAR_SERVO_PIN = 7;
+constexpr int LEFT_SERVO_PIN = 6;
+constexpr int PWM_PIN = 5;
+constexpr float FRONT_REAR_ARM_LENGTH = 0.1f; // Example length
+constexpr float LEFT_RIGHT_ARM_LENGTH = 0.1f; // Example length
+constexpr float MAX_SERVO_ANGLE = 30.0f;      // Example max angle
+constexpr float MAX_THRUST = 10.0f;           // Example max thrust
+constexpr float MAX_PROP_SPEED = 2000.0f;     // Example max prop speed
 
-// put function declarations here:
+BLA::Matrix<3, 3> Kp = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
-/**
- * @brief The setup function.
- * 
- * This function is called once when the Arduino board is powered on or reset.
- * It initializes the serial communication, IMU, servo controller, and SD card.
- */
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  imu.init();
-  servoController.init();
+BLA::Matrix<3, 3> Kd = {0.1f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f};
 
-  if (sdController.begin()) {
-    Serial.println("SD card initialized.");
-  } else {
-    Serial.println("SD card initialization failed.");
-    return;
-  }
-}
+ControlSystem controlSystem(0.01f, Kp, Kd, 0.1f, 1.0f, SD_CS_PIN,
+                            FRONT_SERVO_PIN, RIGHT_SERVO_PIN, REAR_SERVO_PIN,
+                            LEFT_SERVO_PIN, FRONT_REAR_ARM_LENGTH,
+                            LEFT_RIGHT_ARM_LENGTH, MAX_SERVO_ANGLE, MAX_THRUST,
+                            MAX_PROP_SPEED, PWM_PIN);
 
-/**
- * @brief The loop function.
- * 
- * This function is called repeatedly after the setup function.
- * It reads IMU data, processes accelerometer and gyro data, and performs additional operations using the processed data.
- */
-void loop() {
-  String imuData =
-      imu.read(); // Assuming `imu.read()` updates accelerometer and gyro data
+void setup() { controlSystem.initialize(); }
 
-  // Process accelerometer data
-  dataProcessor.processAccelerometer(imu.accelerometer_x, imu.accelerometer_y,
-                                     imu.accelerometer_z);
-
-  // Process gyro data
-  dataProcessor.processGyro(imu.gyro_x, imu.gyro_y, imu.gyro_z);
-
-  // Add your code to use processed data
-}
+void loop() { controlSystem.controlLoop(); }

@@ -4,6 +4,7 @@
  */
 
 #include "ServoController.h"
+#include "config.h" // Ensure this include path is correct
 
 /**
  * @brief Default constructor for the ServoController class.
@@ -21,7 +22,7 @@ ServoController::~ServoController() {
 
 /**
  * @brief Initializes the servos.
- * 
+ *
  * This function attaches the servos to their respective pins.
  */
 void ServoController::init() {
