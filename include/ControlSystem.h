@@ -5,10 +5,9 @@
 #include "FeedforwardController.h"
 #include "FrameConverter.h"
 #include "IMUController.h"
-#include "KalmanFilter.h"
-#include "Matrix.h"
 #include "PIDController.h"
 #include "SDController.h"
+#include "SimpleStateEstimator.h"
 #include "SpeedController.h"
 #include "ThrustVectorControl.h"
 
@@ -17,11 +16,11 @@ private:
   float delta_t;
   IMUController imu;
   PIDController pid;
-  KalmanFilter kf;
   FeedforwardController ff;
   SDController sd;
   ThrustVectorControl tvc;
   SpeedController speedController;
+  SimpleStateEstimator estimator;
   DroneState state;
   Matrix3x1 desired_position;
   Matrix3x1 desired_velocity;
@@ -29,10 +28,10 @@ private:
 
 public:
   ControlSystem(float dt, const Matrix3x3 &Kp, const Matrix3x3 &Kd,
-                float inertia, float mass, uint8_t sdCsPin, uint8_t frontPin,
-                uint8_t rightPin, uint8_t rearPin, uint8_t leftPin,
-                float frontRearArm, float leftRightArm, float maxServoAngle,
-                float maxThrust, float maxPropSpeed, uint8_t pwm_pin);
+                float inertia, float mass, int sdCsPin, int frontPin,
+                int rightPin, int rearPin, int leftPin, float frontRearArm,
+                float leftRightArm, float maxServoAngle, float maxThrust,
+                float maxPropSpeed, int pwm_pin);
 
   void initialize();
   void controlLoop();
