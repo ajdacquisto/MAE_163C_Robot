@@ -24,6 +24,9 @@ class DroneSimulation:
         self.theta_data = []
         self.psi_data = []
 
+        self.integral_pos_err = np.zeros(3)
+        self.integral_ang_err = np.zeros(3)
+
         self.simulate()
 
     def calculate_thrust_vector(self, servo_angles):
@@ -161,21 +164,31 @@ class DroneSimulation:
         # Convert gyro to a numpy array
         gyro = np.array(gyro)
 
-        # PD controller gains (further reduced for better performance)
+        # PID controller gains
         Kp_pos = np.array([0.05, 0.05, 0.2])
+        Ki_pos = np.array([0.01, 0.01, 0.04])
         Kd_pos = np.array([0.025, 0.025, 0.1])
 
         Kp_ang = np.array([0.5, 0.5, 0.5])
+        Ki_ang = np.array([0.1, 0.1, 0.1])
         Kd_ang = np.array([0.25, 0.25, 0.25])
 
-        # Compute the desired force using PD control
-        desired_force = Kp_pos * pos_err - Kd_pos * vel + gravity
+        # Update integral errors
+        self.integral_pos_err += pos_err * self.dt
+        self.integral_ang_err += -np.array(angles) * self.dt
+
+        # Compute the desired force using PID control
+        desired_force = (
+            Kp_pos * pos_err + Ki_pos * self.integral_pos_err - Kd_pos * vel + gravity
+        )
         desired_force[2] += 9.81  # Counteract gravity for hovering
 
-        # Compute the desired torque using PD control on angles
+        # Compute the desired torque using PID control on angles
         ang_err = -np.array(angles)  # Assuming desired angles are zero
         ang_vel_err = -gyro
-        desired_torque = Kp_ang * ang_err - Kd_ang * ang_vel_err
+        desired_torque = (
+            Kp_ang * ang_err + Ki_ang * self.integral_ang_err - Kd_ang * ang_vel_err
+        )
 
         # Soft limit the desired force and torque to avoid instability
         force_limit = 1.0
@@ -211,26 +224,26 @@ class DroneSimulation:
             state[7] += random.uniform(-0.01, 0.01)  # Disturbance in theta
             state[8] += random.uniform(-0.01, 0.01)  # Disturbance in psi
 
-            angles = [state[6], state[7], state[8]]
-            gyro = [state[9], state[10], state[11]]
+        angles = [state[6], state[7], state[8]]
+        gyro = [state[9], state[10], state[11]]
 
-            # Compute control action
-            desired_force, desired_torque = self.compute_control_action(
-                pos_err, vel_err, gravity, gyro, angles
-            )
-            servo_angles = self.convert_to_servo_angles(desired_force, desired_torque)
-            thrust_vector = self.calculate_thrust_vector(servo_angles)
+        # Compute control action
+        desired_force, desired_torque = self.compute_control_action(
+            pos_err, vel_err, gravity, gyro, angles
+        )
+        servo_angles = self.convert_to_servo_angles(desired_force, desired_torque)
+        thrust_vector = self.calculate_thrust_vector(servo_angles)
 
-            # Update state
-            new_state = self.update_drone_state(
-                state, thrust_vector, desired_torque, self.dt
-            )
-            state = new_state
+        # Update state
+        new_state = self.update_drone_state(
+            state, thrust_vector, desired_torque, self.dt
+        )
+        state = new_state
 
-            self.trajectory.append(state)
-            self.phi_data.append(state[6])
-            self.theta_data.append(state[7])
-            self.psi_data.append(state[8])
+        self.trajectory.append(state)
+        self.phi_data.append(state[6])
+        self.theta_data.append(state[7])
+        self.psi_data.append(state[8])
 
     def get_trajectory_data(self):
         x_data = [state[0] for state in self.trajectory]
