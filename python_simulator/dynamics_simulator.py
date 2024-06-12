@@ -23,10 +23,91 @@ class DroneSimulation:
         self.dt = DT
         self.radius = RADIUS
         self.height = HEIGHT
+        self.phi_data = []
+        self.theta_data = []
+        self.psi_data = []
 
         self.simulate()
 
-    import random
+    def calculate_thrust_vector(self, servo_angles):
+        """
+        Calculate the thrust vector based on the servo angles.
+
+        Args:
+        - servo_angles: Array of servo angles for the drone's fins.
+
+        Returns:
+        - thrust_vector: The resulting thrust vector.
+        """
+        if len(servo_angles) != 2:
+            raise ValueError(
+                "servo_angles should contain exactly two elements: [pitch_servo, roll_servo]"
+            )
+
+        # Extract servo angles
+        pitch_servo, roll_servo = servo_angles
+
+        # Define the base thrust vector (pointing upward in the world frame)
+        base_thrust_magnitude = 9.81  # Example thrust magnitude to counteract gravity
+        base_thrust_vector = np.array(
+            [0, 0, base_thrust_magnitude]
+        )  # Base thrust along +z axis in world frame
+
+        # Calculate rotation matrices for pitch and roll adjustments
+        pitch_rotation_matrix = np.array(
+            [
+                [1, 0, 0],
+                [0, np.cos(pitch_servo), -np.sin(pitch_servo)],
+                [0, np.sin(pitch_servo), np.cos(pitch_servo)],
+            ]
+        )
+
+        roll_rotation_matrix = np.array(
+            [
+                [np.cos(roll_servo), 0, np.sin(roll_servo)],
+                [0, 1, 0],
+                [-np.sin(roll_servo), 0, np.cos(roll_servo)],
+            ]
+        )
+
+        # Combine rotations to get the final rotation matrix
+        rotation_matrix = np.dot(roll_rotation_matrix, pitch_rotation_matrix)
+
+        # Apply the rotation to the base thrust vector
+        thrust_vector = np.dot(rotation_matrix, base_thrust_vector)
+
+        # Debug information
+        print(f"Servo angles: {servo_angles}")
+        print(f"Rotation matrix:\n{rotation_matrix}")
+        print(f"Thrust vector: {thrust_vector}")
+
+        return thrust_vector
+
+    def convert_to_servo_angles(self, desired_force, desired_torque):
+        """
+        Convert the desired forces and torques into servo fin angles.
+
+        Args:
+        - desired_force: Desired force vector.
+        - desired_torque: Desired torque vector.
+
+        Returns:
+        - servo_angles: Angles for the servo fins to achieve the desired forces and torques.
+        """
+        max_servo_angle = np.pi / 6  # Maximum servo angle (30 degrees)
+
+        # Normalize the desired torque to get the servo angles
+        servo_pitch_angle = np.clip(
+            desired_torque[1] / 10.0, -max_servo_angle, max_servo_angle
+        )
+        servo_roll_angle = np.clip(
+            desired_torque[0] / 10.0, -max_servo_angle, max_servo_angle
+        )
+
+        # Return the servo angles as an array with exactly two elements
+        servo_angles = np.array([servo_pitch_angle, servo_roll_angle])
+
+        return servo_angles
 
     def add_random_disturbance(self, state):
         """
@@ -55,7 +136,7 @@ class DroneSimulation:
 
     def compute_control_action(self, pos_err, vel, gravity, gyro):
         """
-        Compute the control action based on position error, velocity, gravity compensation, and gyro effects.
+        Compute the control action based on the current error and state.
 
         Args:
         - pos_err: Position error (3D vector).
@@ -64,13 +145,18 @@ class DroneSimulation:
         - gyro: Gyro effects (3D vector).
 
         Returns:
-        - control_action: Desired forces and torques (3D force vector, 3D torque vector).
+        - desired_force: Desired force vector to achieve the control action.
+        - desired_torque: Desired torque vector to achieve the control action.
         """
-        Kp = np.array([1.0, 1.0, 1.0])  # Proportional gains
-        Kd = np.array([0.1, 0.1, 0.1])  # Derivative gains
+        # PD controller gains
+        Kp = np.array([1.0, 1.0, 1.0])
+        Kd = np.array([0.5, 0.5, 0.5])
 
-        desired_force = Kp * pos_err + Kd * vel + gravity
-        desired_torque = gyro  # Simplified for now, needs actual calculation
+        # Compute the desired force using PD control
+        desired_force = Kp * pos_err - Kd * vel + gravity
+
+        # Assume no desired torque for simplicity
+        desired_torque = np.array([0.0, 0.0, 0.0])
 
         return desired_force, desired_torque
 
@@ -94,6 +180,12 @@ class DroneSimulation:
             pos_err, vel, gravity, gyro
         )
 
+        # Convert control actions to servo angles
+        servo_angles = self.convert_to_servo_angles(desired_force, desired_torque)
+
+        # Calculate thrust vector based on servo angles
+        thrust_vector = self.calculate_thrust_vector(servo_angles)
+
         # Unpack the state variables
         x, y, z, vx, vy, vz, phi, theta, psi, p, q, r = state
 
@@ -104,9 +196,9 @@ class DroneSimulation:
         I_z = 0.1  # Moment of inertia around z-axis
 
         # Linear motion
-        ax = (desired_force[0] - gravity[0]) / m
-        ay = (desired_force[1] - gravity[1]) / m
-        az = (desired_force[2] - gravity[2]) / m
+        ax = (thrust_vector[0] - gravity[0]) / m
+        ay = (thrust_vector[1] - gravity[1]) / m
+        az = (thrust_vector[2] - gravity[2]) / m
 
         vx_new = vx + ax * dt
         vy_new = vy + ay * dt
@@ -144,72 +236,26 @@ class DroneSimulation:
             r_new,
         ]
 
-    def convert_to_servo_angles(self, desired_force, desired_torque):
-        """
-        Convert the desired forces and torques into servo fin angles.
-
-        Args:
-        - desired_force: Desired force vector.
-        - desired_torque: Desired torque vector.
-
-        Returns:
-        - servo_angles: Angles for the servo fins to achieve the desired forces and torques.
-        """
-        # Placeholder implementation: map forces and torques to servo angles
-        servo_angles = desired_force + desired_torque  # Simplified for now
-        return servo_angles
-
-    def control_input(self, t):
-        """
-        Generate control inputs for the drone.
-
-        Args:
-        - t: The current time.
-
-        Returns:
-        - control_input: A tuple (thrust, torque_phi, torque_theta, torque_psi).
-        """
-        # Simple control inputs for demonstration
-        thrust = 0.1  # Constant thrust
-        torque_phi = np.sin(t) * 0.01  # Oscillating torque around phi
-        torque_theta = np.cos(t) * 0.01  # Oscillating torque around theta
-        torque_psi = 0.0  # No torque around psi
-
-        return thrust, torque_phi, torque_theta, torque_psi
-
     def simulate(self):
         """
-        Simulate the drone's trajectory over the specified number of steps.
+        Simulates the drone's behavior over time.
         """
-        disturbance_interval = 5  # Apply disturbance every 5 steps
-        for i in range(self.num_steps):
-            t = i * self.dt
-            control = self.control_input(t)
+        state = np.zeros(12)  # Assuming a 12-element state vector
+        gravity = np.array([0, 0, -9.81])
+        gyro = np.zeros(3)  # Assuming no initial gyroscopic effects
 
-            # Compute position error (for simplicity, using zero position error)
-            pos_err = np.array([0.0, 0.0, 0.0])
-
-            # Get current state
-            current_state = self.trajectory[-1]
-
-            # Compute velocity
-            vel = np.array(current_state[3:6])
-
-            # Gravity compensation (for simplicity, using a constant gravity vector)
-            gravity = np.array([0.0, 0.0, 9.81])
-
-            # Gyro effects (for simplicity, using zero gyro effects)
-            gyro = np.array([0.0, 0.0, 0.0])
-
+        for _ in range(self.num_steps):
+            pos_err = -np.array(state[:3])  # Assuming desired position is origin
+            vel_err = -np.array(state[3:6])  # Assuming desired velocity is zero
             new_state = self.update_drone_state(
-                current_state, pos_err, vel, gravity, gyro, self.dt
+                state, pos_err, vel_err, gravity, gyro, self.dt
             )
+            state = new_state
+            self.trajectory.append(state)
 
-            # Apply random disturbance at intervals
-            if i % disturbance_interval == 0 and i != 0:
-                new_state = self.add_random_disturbance(new_state)
-
-            self.trajectory.append(new_state)
+            self.phi_data.append(state[6])
+            self.theta_data.append(state[7])
+            self.psi_data.append(state[8])
 
     def get_trajectory_data(self):
         """
@@ -247,11 +293,12 @@ class DroneSimulation:
         Returns:
         - x_grid, y_grid, z_grid: The coordinates of the cylinder mesh.
         """
-        z = np.linspace(0, height, resolution)
+        z = np.linspace(-height / 2, height / 2, resolution)
         theta = np.linspace(0, 2 * np.pi, resolution)
         theta_grid, z_grid = np.meshgrid(theta, z)
         x_grid = radius * np.cos(theta_grid)
         y_grid = radius * np.sin(theta_grid)
+
         return x_grid, y_grid, z_grid
 
     @staticmethod
@@ -268,6 +315,7 @@ class DroneSimulation:
         Returns:
         - x_rotated, y_rotated, z_rotated: The rotated coordinates of the cylinder mesh.
         """
+        # Rotation matrices
         R_x = np.array(
             [[1, 0, 0], [0, np.cos(phi), -np.sin(phi)], [0, np.sin(phi), np.cos(phi)]]
         )
@@ -282,13 +330,19 @@ class DroneSimulation:
             [[np.cos(psi), -np.sin(psi), 0], [np.sin(psi), np.cos(psi), 0], [0, 0, 1]]
         )
 
+        # Combined rotation matrix
         R = np.dot(R_z, np.dot(R_y, R_x))
-        xyz = np.array([x.flatten(), y.flatten(), z.flatten()])
-        rotated_xyz = np.dot(R, xyz)
 
-        x_rotated = rotated_xyz[0].reshape(x.shape)
-        y_rotated = rotated_xyz[1].reshape(y.shape)
-        z_rotated = rotated_xyz[2].reshape(z.shape)
+        # Flatten the grid arrays for matrix multiplication
+        coords = np.vstack((x.flatten(), y.flatten(), z.flatten()))
+
+        # Apply rotation
+        rotated_coords = np.dot(R, coords)
+
+        # Reshape back to grid shape
+        x_rotated = rotated_coords[0, :].reshape(x.shape)
+        y_rotated = rotated_coords[1, :].reshape(y.shape)
+        z_rotated = rotated_coords[2, :].reshape(z.shape)
 
         return x_rotated, y_rotated, z_rotated
 
@@ -304,7 +358,7 @@ class DroneSimulation:
         ax.set_yticklabels(["$-\\pi/3$", "$-\\pi/6$", "0", "$\\pi/6$", "$\\pi/3$"])
 
     @staticmethod
-    def add_thrust_vector(ax, origin, thrust_vector):
+    def add_thrust_vector(ax, origin, thrust_vector, scale=0.05):
         """
         Add a thrust vector to the 3D plot.
 
@@ -312,16 +366,19 @@ class DroneSimulation:
         - ax: The matplotlib axis object.
         - origin: The origin of the thrust vector.
         - thrust_vector: The thrust vector direction and magnitude.
+        - scale: Scaling factor for the thrust vector length for visualization.
 
         Returns:
         - thrust_vec: The quiver object representing the thrust vector.
         """
+        length = np.linalg.norm(thrust_vector) * scale
+        if length == 0:
+            normalized_vector = np.zeros_like(thrust_vector)
+        else:
+            normalized_vector = thrust_vector / np.linalg.norm(thrust_vector) * length
+
         thrust_vec = ax.quiver(
-            *origin,
-            *thrust_vector,
-            color="orange",
-            length=np.linalg.norm(thrust_vector),
-            normalize=True
+            *origin, *normalized_vector, color="orange", length=1, normalize=True
         )
         return thrust_vec
 
@@ -351,60 +408,53 @@ class DroneSimulation:
         thrust_vectors,
     ):
         """
-        Animate the drone's trajectory and orientation over time.
-
-        Args:
-        - i: The current frame index.
-        - x_data, y_data, z_data: The positional data.
-        - phi_data, theta_data, psi_data: The angular data.
-        - time_data: The time steps.
-        - ax_3d: The 3D axis for the drone plot.
-        - ax_phi, ax_theta, ax_psi: The 2D axes for the angle plots.
-        - x_cyl, y_cyl, z_cyl: The cylinder mesh coordinates.
-        - path: The line object for the drone's path.
-        - drone_pos: The line object for the drone's position.
-        - phi_line, theta_line, psi_line: The line objects for the angle plots.
-        - drone_objects: The list of drone objects to be animated.
-        - thrust_vectors: The list of thrust vector objects to be animated.
+        Update the animation at each frame.
         """
-        # Clear previous drone objects
-        for obj in drone_objects:
-            obj.remove()
-        drone_objects.clear()
+        if i < len(phi_data):
+            # Clear existing plots
+            ax_3d.cla()
 
-        # Clear previous thrust vectors
-        for vec in thrust_vectors:
-            vec.remove()
-        thrust_vectors.clear()
+            # Set axis limits
+            ax_3d.set_xlim(-1, 1)
+            ax_3d.set_ylim(-1, 1)
+            ax_3d.set_zlim(-1, 1)
+            ax_3d.set_xlabel("X")
+            ax_3d.set_ylabel("Y")
+            ax_3d.set_zlabel("Z")
 
-        # Rotate the cylinder to match the current orientation
-        x_rot, y_rot, z_rot = self.rotate_cylinder(
-            x_cyl, y_cyl, z_cyl, phi_data[i], theta_data[i], psi_data[i]
-        )
-        drone_body = ax_3d.plot_surface(x_rot, y_rot, z_rot, color="white", alpha=0.6)
-        drone_objects.append(drone_body)
+            # Update cylinder position and orientation
+            x_rotated, y_rotated, z_rotated = self.rotate_cylinder(
+                x_cyl, y_cyl, z_cyl, phi_data[i], theta_data[i], psi_data[i]
+            )
+            ax_3d.plot_surface(x_rotated, y_rotated, z_rotated, color="b", alpha=0.6)
 
-        # Compute thrust vector based on control inputs (for simplicity, using a constant thrust vector)
-        thrust_vector = np.array([0.0, 0.0, -1.0])
+            # Update path and drone position
+            path.set_data([x_data[:i], y_data[:i]])
+            path.set_3d_properties(z_data[:i])
+            drone_pos.set_data([x_data[i], y_data[i]])
+            drone_pos.set_3d_properties(z_data[i])
 
-        # Add thrust vector
-        thrust_vec = self.add_thrust_vector(
-            ax_3d, (x_data[i], y_data[i], z_data[i]), thrust_vector
-        )
-        thrust_vectors.append(thrust_vec)
+            # Update angle plots
+            phi_line.set_data(time_data[:i], phi_data[:i])
+            theta_line.set_data(time_data[:i], theta_data[:i])
+            psi_line.set_data(time_data[:i], psi_data[:i])
 
-        # Update the 3D path and position
-        path.set_data(x_data[: i + 1], y_data[: i + 1])
-        path.set_3d_properties(z_data[: i + 1])
-        drone_pos.set_data([x_data[i]], [y_data[i]])
-        drone_pos.set_3d_properties([z_data[i]])
+            # Add thrust vector
+            servo_angles = [0.1, 0.1]  # Use small servo angles for testing
+            thrust_vector = self.calculate_thrust_vector(servo_angles)
+            print("z_data[i]:", z_data[i])
+            thrust_vector_origin = [
+                x_data[i],
+                y_data[i],
+                z_data[i] + 0.5 * self.height,
+            ]  # Adjust origin based on drone's position and height
+            self.add_thrust_vector(
+                ax_3d, thrust_vector_origin, thrust_vector, scale=0.05
+            )
 
-        # Update the 2D angle plots
-        phi_line.set_data(time_data[: i + 1], phi_data[: i + 1])
-        theta_line.set_data(time_data[: i + 1], theta_data[: i + 1])
-        psi_line.set_data(time_data[: i + 1], psi_data[: i + 1])
+            return path, drone_pos, phi_line, theta_line, psi_line
 
-        return path, drone_pos, phi_line, theta_line, psi_line
+        return []
 
     def plot_simulation(self):
         """
@@ -451,7 +501,6 @@ class DroneSimulation:
         ax_theta.set_ylabel("Theta (rad)")
         ax_psi.set_ylabel("Psi (rad)")
         ax_psi.set_xlabel("Time (s)")
-
         (phi_line,) = ax_phi.plot([], [], "r-")
         (theta_line,) = ax_theta.plot([], [], "g-")
         (psi_line,) = ax_psi.plot([], [], "b-")
