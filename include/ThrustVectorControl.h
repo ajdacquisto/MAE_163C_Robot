@@ -1,17 +1,17 @@
 #ifndef THRUSTVECTORCONTROL_H
 #define THRUSTVECTORCONTROL_H
 
+#include "ServoController.h"
 #include <BasicLinearAlgebra.h>
-#include <Servo.h>
 
 using namespace BLA;
 
 class ThrustVectorControl {
 private:
-  Servo frontServo;
-  Servo rightServo;
-  Servo rearServo;
-  Servo leftServo;
+  ServoController frontServo;
+  ServoController rightServo;
+  ServoController rearServo;
+  ServoController leftServo;
 
   float frontRearArmLength; // Distance from the center of gravity to the
                             // front/rear servos

@@ -1,34 +1,20 @@
-/**
- * @file ServoController.cpp
- * @brief Implementation file for the ServoController class.
- */
-
 #include "ServoController.h"
-#include "config.h" // Ensure this include path is correct
+#include <Arduino.h>
 
-/**
- * @brief Default constructor for the ServoController class.
- */
-ServoController::ServoController() {
-  // Constructor implementation
+ServoController::ServoController() : _pin(255) {}
+
+void ServoController::attach(uint8_t pin) {
+  _pin = pin;
+  pinMode(_pin, OUTPUT);
 }
 
-/**
- * @brief Destructor for the ServoController class.
- */
-ServoController::~ServoController() {
-  // Destructor implementation
-}
-
-/**
- * @brief Initializes the servos.
- *
- * This function attaches the servos to their respective pins.
- */
-void ServoController::init() {
-  // Initialize the servos
-  servo1.attach(SERVO1_PIN);
-  servo2.attach(SERVO2_PIN);
-  servo3.attach(SERVO3_PIN);
-  servo4.attach(SERVO4_PIN);
+void ServoController::write(uint8_t angle) {
+  if (_pin != 255) {
+    // Convert angle to pulse width in microseconds (e.g., 0-180 degrees to
+    // 544-2400 microseconds)
+    int pulseWidth = map(angle, 0, 180, 544, 2400);
+    analogWrite(
+        _pin, pulseWidth /
+                  4); // Arduino's analogWrite function takes a value from 0-255
+  }
 }
