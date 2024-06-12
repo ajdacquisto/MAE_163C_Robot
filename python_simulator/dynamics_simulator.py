@@ -105,6 +105,8 @@ class DroneSimulation:
 
     def update_drone_state(self, state, thrust_vector, desired_torque, dt):
         x, y, z, vx, vy, vz, phi, theta, psi, p, q, r = state
+        # m = 1.444483 #kg
+        # I_x, I_y, I_z = 0.00430516739, 0.00672900765, 0.00763506364 #kg*m^2
         m = 1.0
         I_x, I_y, I_z = 0.1, 0.1, 0.1
 
@@ -463,7 +465,7 @@ class DroneSimulation:
 
         # Create animation
         ani = FuncAnimation(
-            fig, self.animate, frames=len(self.time_data), interval=20, blit=False
+            fig, self.animate, frames=len(self.time_data), interval=150, blit=False
         )
 
         plt.tight_layout()
