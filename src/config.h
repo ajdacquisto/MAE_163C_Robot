@@ -11,28 +11,27 @@
 /**
  * @brief Pin number for servo 1.
  */
-const int SERVO1_PIN = 9;
+const int SERVO1_PIN = 3;
 
 /**
  * @brief Pin number for servo 2.
  */
-const int SERVO2_PIN = 10;
+const int SERVO2_PIN = 6;
 
 /**
  * @brief Pin number for servo 3.
  */
-const int SERVO3_PIN = 11;
+const int SERVO3_PIN = 5;
 
 /**
  * @brief Pin number for servo 4.
  */
-const int SERVO4_PIN = 12;
+const int SERVO4_PIN = 10;
 
 /**
  * @brief Pin number for SD card chip select.
  */
 const int SD_CS_PIN = 4;
-
 
 
 #endif // CONFIG_H
